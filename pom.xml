@@ -23,6 +23,7 @@
     </description>
 
     <modules>
+        <module>events</module>
         <module>order-service</module>
         <module>payment-service</module>
         <module>inventory-service</module>
@@ -104,6 +105,11 @@
             <dependency>
                 <groupId>com.enterprise</groupId>
                 <artifactId>saga-orchestrator</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.enterprise</groupId>
+                <artifactId>events</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

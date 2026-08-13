@@ -38,6 +38,12 @@
             <artifactId>pulsar-client</artifactId>
         </dependency>
 
+        <!-- Domain Events -->
+        <dependency>
+            <groupId>com.enterprise</groupId>
+            <artifactId>events</artifactId>
+        </dependency>
+
         <!-- Resilience -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
