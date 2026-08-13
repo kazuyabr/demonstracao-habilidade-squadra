@@ -52,7 +52,7 @@ resource "azurerm_mssql_server" "main" {
   resource_group_name          = azurerm_resource_group.main.name
   location                     = azurerm_resource_group.main.location
   version                      = "12.0"
-  administrator_login          = "sqladmin"
+  administrator_login          = var.sql_admin_login
   administrator_login_password = var.sql_password
 }
 
@@ -127,6 +127,12 @@ resource "azurerm_application_insights" "main" {
 }
 
 # Variables
+variable "sql_admin_login" {
+  description = "SQL Server administrator login"
+  type        = string
+  default     = "sqladmin"
+}
+
 variable "sql_password" {
   description = "SQL Server administrator password"
   type        = string
