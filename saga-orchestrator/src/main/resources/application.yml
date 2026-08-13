@@ -8,7 +8,7 @@ spring:
   datasource:
     url: jdbc:sqlserver://localhost:1433;databaseName=saga_db;encrypt=true;trustServerCertificate=true
     username: sa
-    password: REPLACE_WITH_ENV_VARIABLE
+    password: ${SAGA_DB_PASSWORD:REPLACE_WITH_ENV_VARIABLE}
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
 
   jpa:

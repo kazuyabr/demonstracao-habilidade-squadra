@@ -8,7 +8,7 @@ spring:
   datasource:
     url: jdbc:sqlserver://localhost:1433;databaseName=payment_db;encrypt=true;trustServerCertificate=true
     username: sa
-    password: REPLACE_WITH_ENV_VARIABLE
+    password: ${PAYMENT_DB_PASSWORD:REPLACE_WITH_ENV_VARIABLE}
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
 
   jpa:
