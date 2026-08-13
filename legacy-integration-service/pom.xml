@@ -15,6 +15,12 @@
     <description>Anti-corruption layer for integrating with legacy systems via TIBCO EMS.</description>
 
     <dependencies>
+        <!-- Internal: Events module -->
+        <dependency>
+            <groupId>com.enterprise</groupId>
+            <artifactId>events</artifactId>
+        </dependency>
+
         <!-- Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

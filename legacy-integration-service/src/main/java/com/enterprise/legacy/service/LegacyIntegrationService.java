@@ -3,7 +3,7 @@ package com.enterprise.legacy.service;
 import com.enterprise.events.OrderCreatedEvent;
 import com.enterprise.events.OrderConfirmedEvent;
 import com.enterprise.events.producer.EventProducer;
-import com.enterprise.events.PulsarTopics;
+import com.enterprise.events.config.PulsarTopics;
 import com.enterprise.legacy.adapter.MainframeBatchAdapter;
 import com.enterprise.legacy.adapter.TibcoEmsAdapter;
 import lombok.RequiredArgsConstructor;
@@ -103,12 +103,9 @@ public class LegacyIntegrationService {
 
         // Publish order confirmed event
         OrderConfirmedEvent event = OrderConfirmedEvent.builder()
-                .eventId(java.util.UUID.randomUUID().toString())
                 .orderId(orderId)
                 .orderNumber("LEG-" + legacyReference)
                 .customerId("LEGACY")
-                .confirmedAt(java.time.LocalDateTime.now())
-                .sagaId(null)
                 .build();
 
         eventProducer.publish(PulsarTopics.ORDER_CONFIRMED, event);

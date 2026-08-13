@@ -79,7 +79,7 @@ class PaymentServiceTest {
         assertNotNull(response);
         assertEquals(PaymentStatus.AUTHORIZED, response.getStatus());
         assertEquals("GW-ABC123", response.getGatewayReference());
-        verify(paymentRepository, times(2)).save(any(Payment.class));
+        verify(paymentRepository, times(3)).save(any(Payment.class));
     }
 
     @Test

@@ -37,7 +37,6 @@ public class InventoryItem {
 
     private LocalDateTime updatedAt;
 
-    @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
@@ -46,7 +45,6 @@ public class InventoryItem {
         recalculateAvailable();
     }
 
-    @PreUpdate
     public void preUpdate() {
         updatedAt = LocalDateTime.now();
         recalculateAvailable();

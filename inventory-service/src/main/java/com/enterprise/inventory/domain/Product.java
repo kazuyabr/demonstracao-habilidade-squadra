@@ -50,7 +50,6 @@ public class Product {
 
     private LocalDateTime updatedAt;
 
-    @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
@@ -58,7 +57,6 @@ public class Product {
         if (attributes == null) attributes = new HashMap<>();
     }
 
-    @PreUpdate
     public void preUpdate() {
         updatedAt = LocalDateTime.now();
     }

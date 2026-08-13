@@ -8,8 +8,9 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import reactor.core.publisher.Flux;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -76,8 +77,8 @@ public class SecurityConfig {
      * }
      */
     @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+    public ReactiveJwtAuthenticationConverter jwtAuthenticationConverter() {
+        ReactiveJwtAuthenticationConverter converter = new ReactiveJwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter());
         return converter;
     }
@@ -85,11 +86,11 @@ public class SecurityConfig {
     /**
      * Converts Keycloak roles to Spring Security GrantedAuthority.
      */
-    static class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
+    static class KeycloakRoleConverter implements Converter<Jwt, Flux<GrantedAuthority>> {
 
         @Override
-        public Collection<GrantedAuthority> convert(Jwt jwt) {
-            Collection<GrantedAuthority> authorities = new ArrayList<>();
+        public Flux<GrantedAuthority> convert(Jwt jwt) {
+            List<GrantedAuthority> authorities = new ArrayList<>();
 
             // Extract realm roles from Keycloak JWT
             Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
@@ -116,7 +117,7 @@ public class SecurityConfig {
                 });
             }
 
-            return authorities;
+            return Flux.fromIterable(authorities);
         }
     }
 }
