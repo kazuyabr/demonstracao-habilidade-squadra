@@ -1,0 +1,19 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    url: jdbc:sqlserver://localhost:1434;databaseName=order_db_test;encrypt=true;trustServerCertificate=true
+    username: sa
+    password: ${ORDER_DB_PASSWORD:REPLACE_WITH_ENV_VARIABLE}
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+logging:
+  level:
+    com.enterprise.order: DEBUG
+    org.hibernate.SQL: DEBUG

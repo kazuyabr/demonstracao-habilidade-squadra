@@ -30,7 +30,21 @@ logs/
 
 # === Environment ===
 .env
-.env.local
+.env.*
+!.env.example
+
+# === Terraform ===
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+!*.tfvars.example
+
+# === Secrets ===
+**/secrets/
+**/credentials/
+**/*-secret.yml
+**/*-secret.yaml
 
 # === Node (frontend) ===
 frontend/node_modules/

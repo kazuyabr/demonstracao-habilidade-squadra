@@ -1,0 +1,13 @@
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  datasource:
+    url: jdbc:sqlserver://sqlserver:1433;databaseName=payment_db;encrypt=true;trustServerCertificate=true
+    username: sa
+    password: ${PAYMENT_DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update

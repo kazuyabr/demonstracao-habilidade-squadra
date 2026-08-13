@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: enterprise-order-platform
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  SPRING_PROFILES_ACTIVE: "docker"
+  PULSAR_SERVICE_URL: "pulsar://pulsar:6650"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+type: Opaque
+stringData:
+  SA_PASSWORD: ${SQLSERVER_SA_PASSWORD}
+  MONGODB_PASSWORD: ${MONGODB_PASSWORD}

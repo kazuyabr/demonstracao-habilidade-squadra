@@ -1,0 +1,8 @@
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  data:
+    mongodb:
+      uri: mongodb://mongodb:27017/inventory_db
