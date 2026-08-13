@@ -1,0 +1,46 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: saga-orchestrator
+
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=saga_db;encrypt=true;trustServerCertificate=true
+    username: sa
+    password: REPLACE_WITH_ENV_VARIABLE
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.SQLServerDialect
+        format_sql: true
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+pulsar:
+  service-url: pulsar://localhost:6650
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+logging:
+  level:
+    com.enterprise.saga: DEBUG
+    com.enterprise.events: DEBUG
