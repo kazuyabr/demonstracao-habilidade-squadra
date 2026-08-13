@@ -1,0 +1,61 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      routes:
+        - id: order-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/orders/**
+        - id: payment-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/payments/**
+        - id: inventory-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/inventory/**
+        - id: notification-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/notifications/**
+        - id: legacy-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/legacy/**
+        - id: saga-orchestrator
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/sagas/**
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/enterprise-platform
+          jwk-set-uri: http://localhost:8180/realms/enterprise-platform/protocol/openid-connect/certs
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+logging:
+  level:
+    com.enterprise.gateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG

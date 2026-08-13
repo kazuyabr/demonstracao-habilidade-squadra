@@ -1,0 +1,39 @@
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: http://order-service:8081
+          predicates:
+            - Path=/api/orders/**
+        - id: payment-service
+          uri: http://payment-service:8082
+          predicates:
+            - Path=/api/payments/**
+        - id: inventory-service
+          uri: http://inventory-service:8083
+          predicates:
+            - Path=/api/inventory/**
+        - id: notification-service
+          uri: http://notification-service:8084
+          predicates:
+            - Path=/api/notifications/**
+        - id: legacy-service
+          uri: http://legacy-integration-service:8085
+          predicates:
+            - Path=/api/legacy/**
+        - id: saga-orchestrator
+          uri: http://saga-orchestrator:8086
+          predicates:
+            - Path=/api/sagas/**
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8180/realms/enterprise-platform
+          jwk-set-uri: http://keycloak:8180/realms/enterprise-platform/protocol/openid-connect/certs
