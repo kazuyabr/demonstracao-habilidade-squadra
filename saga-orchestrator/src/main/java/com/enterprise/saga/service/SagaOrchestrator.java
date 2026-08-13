@@ -1,6 +1,7 @@
 package com.enterprise.saga.service;
 
 import com.enterprise.events.*;
+import com.enterprise.events.config.PulsarTopics;
 import com.enterprise.events.producer.EventProducer;
 import com.enterprise.saga.domain.*;
 import lombok.RequiredArgsConstructor;
@@ -251,66 +252,47 @@ public class SagaOrchestrator {
         switch (step.getStepId()) {
             case "authorize-payment" -> {
                 PaymentAuthorizedEvent event = PaymentAuthorizedEvent.builder()
-                        .eventId(java.util.UUID.randomUUID().toString())
                         .orderId(saga.getOrderId())
-                        .orderNumber(saga.getOrderNumber())
                         .customerId(saga.getCustomerId())
-                        .amount(java.math.BigDecimal.ZERO) // Will be set by payment service
-                        .transactionId("TXN-" + System.currentTimeMillis())
-                        .sagaId(saga.getSagaId())
+                        .amount(java.math.BigDecimal.ZERO)
                         .build();
                 eventProducer.publish(PulsarTopics.PAYMENT_AUTHORIZED, event);
             }
             case "reserve-inventory" -> {
                 InventoryReservedEvent event = InventoryReservedEvent.builder()
-                        .eventId(java.util.UUID.randomUUID().toString())
                         .orderId(saga.getOrderId())
                         .reservationId("RES-" + System.currentTimeMillis())
-                        .items(List.of()) // Will be set by inventory service
-                        .sagaId(saga.getSagaId())
                         .build();
                 eventProducer.publish(PulsarTopics.INVENTORY_RESERVED, event);
             }
             case "confirm-order" -> {
                 OrderConfirmedEvent event = OrderConfirmedEvent.builder()
-                        .eventId(java.util.UUID.randomUUID().toString())
                         .orderId(saga.getOrderId())
                         .orderNumber(saga.getOrderNumber())
                         .customerId(saga.getCustomerId())
-                        .confirmedAt(LocalDateTime.now())
-                        .sagaId(saga.getSagaId())
                         .build();
                 eventProducer.publish(PulsarTopics.ORDER_CONFIRMED, event);
             }
             case "refund-payment" -> {
                 PaymentRefundedEvent event = PaymentRefundedEvent.builder()
-                        .eventId(java.util.UUID.randomUUID().toString())
                         .orderId(saga.getOrderId())
-                        .amount(java.math.BigDecimal.ZERO)
-                        .transactionId("REFUND-" + System.currentTimeMillis())
+                        .customerId(saga.getCustomerId())
                         .reason("Saga compensation")
-                        .sagaId(saga.getSagaId())
                         .build();
                 eventProducer.publish(PulsarTopics.PAYMENT_REFUNDED, event);
             }
             case "release-inventory" -> {
                 InventoryReleasedEvent event = InventoryReleasedEvent.builder()
-                        .eventId(java.util.UUID.randomUUID().toString())
                         .orderId(saga.getOrderId())
-                        .reservationId("RES-" + System.currentTimeMillis())
-                        .sagaId(saga.getSagaId())
                         .build();
                 eventProducer.publish(PulsarTopics.INVENTORY_RELEASED, event);
             }
             case "cancel-order" -> {
                 OrderCancelledEvent event = OrderCancelledEvent.builder()
-                        .eventId(java.util.UUID.randomUUID().toString())
                         .orderId(saga.getOrderId())
                         .orderNumber(saga.getOrderNumber())
                         .customerId(saga.getCustomerId())
                         .reason("Saga compensation")
-                        .cancelledAt(LocalDateTime.now())
-                        .sagaId(saga.getSagaId())
                         .build();
                 eventProducer.publish(PulsarTopics.ORDER_CANCELLED, event);
             }

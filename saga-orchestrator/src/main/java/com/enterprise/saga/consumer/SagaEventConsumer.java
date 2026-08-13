@@ -1,6 +1,7 @@
 package com.enterprise.saga.consumer;
 
 import com.enterprise.events.*;
+import com.enterprise.events.config.PulsarTopics;
 import com.enterprise.events.consumer.EventConsumer;
 import com.enterprise.saga.domain.SagaInstance;
 import com.enterprise.saga.service.SagaOrchestrator;
@@ -75,10 +76,10 @@ public class SagaEventConsumer {
     }
 
     private void handlePaymentAuthorized(PaymentAuthorizedEvent event) {
-        log.info("Received PaymentAuthorized event | SagaId: {}", event.getSagaId());
-        if (event.getSagaId() != null) {
+        log.info("Received PaymentAuthorized event | SagaId: {}", event.getSagaInstanceId());
+        if (event.getSagaInstanceId() != null) {
             sagaOrchestrator.handleStepCompleted(
-                    event.getSagaId(),
+                    event.getSagaInstanceId(),
                     "authorize-payment",
                     "Payment authorized successfully"
             );
@@ -86,10 +87,10 @@ public class SagaEventConsumer {
     }
 
     private void handlePaymentFailed(PaymentFailedEvent event) {
-        log.info("Received PaymentFailed event | SagaId: {}", event.getSagaId());
-        if (event.getSagaId() != null) {
+        log.info("Received PaymentFailed event | SagaId: {}", event.getSagaInstanceId());
+        if (event.getSagaInstanceId() != null) {
             sagaOrchestrator.handleStepFailed(
-                    event.getSagaId(),
+                    event.getSagaInstanceId(),
                     "authorize-payment",
                     event.getFailureReason()
             );
@@ -97,10 +98,10 @@ public class SagaEventConsumer {
     }
 
     private void handleInventoryReserved(InventoryReservedEvent event) {
-        log.info("Received InventoryReserved event | SagaId: {}", event.getSagaId());
-        if (event.getSagaId() != null) {
+        log.info("Received InventoryReserved event | SagaId: {}", event.getSagaInstanceId());
+        if (event.getSagaInstanceId() != null) {
             sagaOrchestrator.handleStepCompleted(
-                    event.getSagaId(),
+                    event.getSagaInstanceId(),
                     "reserve-inventory",
                     "Inventory reserved successfully"
             );
@@ -108,12 +109,12 @@ public class SagaEventConsumer {
     }
 
     private void handleInventoryReservationFailed(InventoryReservationFailedEvent event) {
-        log.info("Received InventoryReservationFailed event | SagaId: {}", event.getSagaId());
-        if (event.getSagaId() != null) {
+        log.info("Received InventoryReservationFailed event | SagaId: {}", event.getSagaInstanceId());
+        if (event.getSagaInstanceId() != null) {
             sagaOrchestrator.handleStepFailed(
-                    event.getSagaId(),
+                    event.getSagaInstanceId(),
                     "reserve-inventory",
-                    event.getReason()
+                    event.getFailureReason()
             );
         }
     }

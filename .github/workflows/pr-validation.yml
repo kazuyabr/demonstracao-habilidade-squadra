@@ -20,16 +20,8 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Build
+        run: mvn clean compile -DskipTests
+
       - name: Run tests
         run: mvn test
-
-      - name: Build
-        run: mvn clean package -DskipTests
-
-      - name: Check code formatting
-        run: mvn spotless:check || true
-
-      - name: Run SonarQube analysis
-        run: mvn sonar:sonar || true
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

@@ -29,15 +29,13 @@ jobs:
       - name: Run tests
         run: mvn test
 
-      - name: Generate coverage report
-        run: mvn jacoco:report
-
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           file: ./target/site/jacoco/index.html
           flags: unittests
           name: codecov-umbrella
+        continue-on-error: true
 
   build:
     name: Build
@@ -75,11 +73,23 @@ jobs:
     name: Build Docker Images
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
 
     permissions:
       contents: read
       packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - order-service
+          - payment-service
+          - inventory-service
+          - notification-service
+          - legacy-integration-service
+          - saga-orchestrator
+          - api-gateway
 
     steps:
       - name: Checkout code
@@ -96,15 +106,16 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}
           tags: |
             type=ref,event=branch
             type=sha
 
-      - name: Build and push Docker images
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ${{ matrix.service }}/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

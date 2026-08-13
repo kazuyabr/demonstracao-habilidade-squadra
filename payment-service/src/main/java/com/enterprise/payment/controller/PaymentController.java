@@ -73,7 +73,7 @@ public class PaymentController {
             description = "Compensating transaction for when inventory fails after payment authorization")
     public ResponseEntity<PaymentResponse> requestRefund(
             @PathVariable UUID paymentId,
-            @RequestParam(default_value = "Saga compensation: inventory reservation failed") String reason) {
+            @RequestParam(defaultValue = "Saga compensation: inventory reservation failed") String reason) {
         return ResponseEntity.ok(paymentService.requestRefund(paymentId, reason));
     }
 }

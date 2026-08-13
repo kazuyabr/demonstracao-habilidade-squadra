@@ -1,6 +1,7 @@
 package com.enterprise.notification.consumer;
 
 import com.enterprise.events.*;
+import com.enterprise.events.config.PulsarTopics;
 import com.enterprise.events.consumer.EventConsumer;
 import com.enterprise.notification.service.NotificationService;
 import jakarta.annotation.PostConstruct;

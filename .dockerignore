@@ -1,0 +1,13 @@
+.git
+.gitignore
+.vibecoding
+scripts
+**/target
+**/.mvn
+frontend/node_modules
+frontend/dist
+docker/volumes
+*.md
+.env
+.env.*
+!.env.example

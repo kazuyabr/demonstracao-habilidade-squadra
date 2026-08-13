@@ -1,5 +1,6 @@
 package com.enterprise.order.dto;
 
+import com.enterprise.order.domain.OrderStatus;
 import lombok.*;
 
 import java.time.LocalDateTime;

@@ -43,14 +43,14 @@ public class OrderService {
                 .build();
 
         request.getItems().forEach(itemRequest -> {
-            order.getItems().add(
-                    com.enterprise.order.domain.OrderItem.builder()
-                            .productId(itemRequest.getProductId())
-                            .productName(itemRequest.getProductName())
-                            .quantity(itemRequest.getQuantity())
-                            .unitPrice(itemRequest.getUnitPrice())
-                            .build()
-            );
+            com.enterprise.order.domain.OrderItem item = com.enterprise.order.domain.OrderItem.builder()
+                    .productId(itemRequest.getProductId())
+                    .productName(itemRequest.getProductName())
+                    .quantity(itemRequest.getQuantity())
+                    .unitPrice(itemRequest.getUnitPrice())
+                    .build();
+            item.calculateSubtotal();
+            order.getItems().add(item);
         });
 
         order.recalculateTotal();

@@ -41,7 +41,7 @@ public class InventoryController {
     public ResponseEntity<StockReservationResponse> releaseStock(
             @RequestParam String orderId,
             @RequestParam String productId,
-            @RequestParam(default_value = "Saga compensation") String reason) {
+            @RequestParam(defaultValue = "Saga compensation") String reason) {
         return ResponseEntity.ok(inventoryService.releaseStock(orderId, productId, reason));
     }
 
