@@ -168,19 +168,46 @@ mvn clean verify
 Manifests in `k8s/` use Kustomize with environment overlays:
 
 ```bash
+# Development environment
 kubectl apply -k k8s/overlays/dev
-kubectl apply -k k8s/overlays/staging
+
+# Production environment
 kubectl apply -k k8s/overlays/prod
 ```
+
+Each overlay points to the images published to GitHub Container Registry
+(`ghcr.io/kazuyabr/demonstracao-habilidade-squadra/<service>`). If you fork the
+repository, update the image references to match your own registry path.
 
 ## CI/CD
 
 GitHub Actions in `.github/workflows/`:
 
-- `ci-cd.yml`: test -> build -> Docker images -> deploy
+- `ci-cd.yml`: test -> build -> Docker images -> deploy (develop and main)
 - `pr-validation.yml`: compile + test on pull requests
 
-Pipeline: `push -> Build -> Test -> Docker Build -> Push to Registry -> Deploy`
+Pipeline: `push -> Test -> Build -> Docker Build -> Push to Registry -> Deploy`
+
+### Environment flow
+
+| Branch | Environment | Deploy |
+|--------|-------------|--------|
+| `develop` | Dev | `k8s/overlays/dev` (image tag `develop`) |
+| `main` | Production | `k8s/overlays/prod` (image tag `main`) |
+
+`main` is the protected default branch. Changes reach production through a
+pull request from `develop`.
+
+### Enabling real deployments
+
+By default the deploy jobs are no-ops (the pipeline stays green without
+credentials). To enable real Kubernetes deployments, add repository secrets:
+
+- `KUBECONFIG_DEV`: kubeconfig for the dev cluster
+- `KUBECONFIG_PROD`: kubeconfig for the production cluster
+
+The deploy job detects the secret and runs `kubectl apply -k k8s/overlays/<env>`
+when present; otherwise it skips gracefully.
 
 ## Azure Deployment
 

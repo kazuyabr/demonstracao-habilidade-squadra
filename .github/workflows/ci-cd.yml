@@ -73,7 +73,7 @@ jobs:
     name: Build Docker Images
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    if: github.event_name == 'push'
 
     permissions:
       contents: read
@@ -124,28 +124,48 @@ jobs:
     name: Deploy to Dev
     needs: docker
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to Kubernetes Dev
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Deploy to Kubernetes (Dev)
+        if: ${{ secrets.KUBECONFIG_DEV != '' }}
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG_DEV }}
+        run: kubectl apply -k k8s/overlays/dev
+
+      - name: Dev deployment skipped (no credentials)
+        if: ${{ secrets.KUBECONFIG_DEV == '' }}
         run: |
-          echo "Deploying to dev environment..."
-          # kubectl apply -k k8s/overlays/dev
+          echo "No KUBECONFIG_DEV secret configured - skipping actual deployment."
+          echo "To enable, add a KUBECONFIG_DEV repository secret containing your kubeconfig."
 
   deploy-prod:
     name: Deploy to Production
     needs: docker
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to Kubernetes Production
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Deploy to Kubernetes (Production)
+        if: ${{ secrets.KUBECONFIG_PROD != '' }}
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG_PROD }}
+        run: kubectl apply -k k8s/overlays/prod
+
+      - name: Production deployment skipped (no credentials)
+        if: ${{ secrets.KUBECONFIG_PROD == '' }}
         run: |
-          echo "Deploying to production environment..."
-          # kubectl apply -k k8s/overlays/prod
+          echo "No KUBECONFIG_PROD secret configured - skipping actual deployment."
+          echo "To enable, add a KUBECONFIG_PROD repository secret containing your kubeconfig."
