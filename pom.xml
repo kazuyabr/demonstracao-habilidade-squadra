@@ -54,9 +54,6 @@
         <!-- Resilience -->
         <resilience4j.version>2.2.0</resilience4j.version>
 
-        <!-- Observability -->
-        <micrometer.version>1.13.6</micrometer.version>
-
         <!-- Testing -->
         <testcontainers.version>1.20.3</testcontainers.version>
 
@@ -183,6 +180,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Common: Micrometer Prometheus registry (version managed by Spring Boot) -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
         <!-- Common: Configuration Processor -->
