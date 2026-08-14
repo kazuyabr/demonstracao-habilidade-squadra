@@ -1,7 +1,24 @@
-version: '3.8'
+# =============================================================================
+# Enterprise Order Processing Platform - Docker Compose
+# =============================================================================
+#
+# Host ports use a non-default range (1xxxx) to avoid collisions with local
+# development servers (Node on 3000, Spring on 8080, etc.). Container ports
+# remain untouched, so service-to-service communication is unaffected.
+#
+# Profiles:
+#   - default (core):      infrastructure + microservices + frontend + Prometheus + Grafana
+#   - --profile full:      adds Elasticsearch, Kibana and Logstash (heavier)
+#
+# Quick start:
+#   cp .env.example .env   # then fill in the values
+#   docker-compose up -d   # core stack
+#   docker-compose --profile full up -d   # everything
 
 services:
+  # ---------------------------------------------------------------------------
   # Infrastructure
+  # ---------------------------------------------------------------------------
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sqlserver
@@ -10,58 +27,83 @@ services:
       SA_PASSWORD: "${SQLSERVER_SA_PASSWORD}"
       MSSQL_PID: "Developer"
     ports:
-      - "1433:1433"
+      - "11433:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
+      - ./docker/sqlserver/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${SQLSERVER_SA_PASSWORD}" -Q "SELECT 1" || exit 1
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
   mongodb:
     image: mongo:7.0
     container_name: mongodb
     ports:
-      - "27017:27017"
+      - "17017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: "${MONGODB_USERNAME}"
       MONGO_INITDB_ROOT_PASSWORD: "${MONGODB_PASSWORD}"
     volumes:
       - mongodb-data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   pulsar:
     image: apachepulsar/pulsar:3.1.1
     container_name: pulsar
     command: bin/pulsar standalone
     ports:
-      - "6650:6650"
-      - "8080:8080"
+      - "16650:6650"
+      - "18090:8080"
     volumes:
       - pulsar-data:/pulsar/data
+    healthcheck:
+      test: curl -sf http://localhost:8080/admin/v2/clusters | grep -q standalone
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   keycloak:
     image: quay.io/keycloak/keycloak:23.0
     container_name: keycloak
-    command: start-dev
+    command: start-dev --import-realm
     environment:
       KEYCLOAK_ADMIN: "${KEYCLOAK_ADMIN_USER}"
       KEYCLOAK_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD}"
+      KEYCLOAK_DEMO_PASSWORD: "${KEYCLOAK_DEMO_PASSWORD}"
     ports:
-      - "8180:8080"
+      - "18180:8080"
     volumes:
       - keycloak-data:/opt/keycloak/data
+      - ./docker/keycloak/import:/opt/keycloak/data/import
+    healthcheck:
+      test: curl -sf http://localhost:8080/realms/enterprise-platform | grep -q enterprise-platform
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
 
+  # ---------------------------------------------------------------------------
   # Microservices
+  # ---------------------------------------------------------------------------
   order-service:
     build:
       context: .
       dockerfile: order-service/Dockerfile
     container_name: order-service
     ports:
-      - "8081:8081"
+      - "18081:8081"
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      ORDER_DB_PASSWORD: "${ORDER_DB_PASSWORD}"
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -74,9 +116,10 @@ services:
       dockerfile: payment-service/Dockerfile
     container_name: payment-service
     ports:
-      - "8082:8082"
+      - "18082:8082"
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      PAYMENT_DB_PASSWORD: "${PAYMENT_DB_PASSWORD}"
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -89,12 +132,14 @@ services:
       dockerfile: inventory-service/Dockerfile
     container_name: inventory-service
     ports:
-      - "8083:8083"
+      - "18083:8083"
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      MONGODB_USERNAME: "${MONGODB_USERNAME}"
+      MONGODB_PASSWORD: "${MONGODB_PASSWORD}"
     depends_on:
       mongodb:
-        condition: service_started
+        condition: service_healthy
       pulsar:
         condition: service_started
 
@@ -104,7 +149,7 @@ services:
       dockerfile: notification-service/Dockerfile
     container_name: notification-service
     ports:
-      - "8084:8084"
+      - "18084:8084"
     environment:
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
@@ -117,7 +162,7 @@ services:
       dockerfile: legacy-integration-service/Dockerfile
     container_name: legacy-integration-service
     ports:
-      - "8085:8085"
+      - "18085:8085"
     environment:
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
@@ -130,9 +175,10 @@ services:
       dockerfile: saga-orchestrator/Dockerfile
     container_name: saga-orchestrator
     ports:
-      - "8086:8086"
+      - "18086:8086"
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      SAGA_DB_PASSWORD: "${SAGA_DB_PASSWORD}"
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -145,7 +191,7 @@ services:
       dockerfile: api-gateway/Dockerfile
     container_name: api-gateway
     ports:
-      - "8080:8080"
+      - "18080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
@@ -155,33 +201,46 @@ services:
       - notification-service
       - legacy-integration-service
       - saga-orchestrator
+      - keycloak
 
+  # ---------------------------------------------------------------------------
   # Frontend
+  # ---------------------------------------------------------------------------
   frontend:
     build:
       context: .
       dockerfile: frontend/Dockerfile
     container_name: frontend
     ports:
-      - "3000:80"
+      - "3003:80"
     depends_on:
       - api-gateway
 
-  # Observability
+  # ---------------------------------------------------------------------------
+  # Observability (core)
+  # ---------------------------------------------------------------------------
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
     ports:
-      - "9090:9090"
+      - "19090:9090"
     volumes:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
+    depends_on:
+      - order-service
+      - payment-service
+      - inventory-service
+      - notification-service
+      - legacy-integration-service
+      - saga-orchestrator
+      - api-gateway
 
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
-      - "3001:3000"
+      - "3007:3000"
     environment:
       GF_SECURITY_ADMIN_USER: "${GRAFANA_ADMIN_USER}"
       GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD}"
@@ -189,24 +248,31 @@ services:
       - ./docker/grafana/provisioning:/etc/grafana/provisioning
       - ./docker/grafana/dashboards:/var/lib/grafana/dashboards
       - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
 
+  # ---------------------------------------------------------------------------
+  # Observability (full profile - heavier)
+  # ---------------------------------------------------------------------------
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
     container_name: elasticsearch
+    profiles: ["full"]
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ports:
-      - "9200:9200"
+      - "19200:9200"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.11.0
     container_name: kibana
+    profiles: ["full"]
     ports:
-      - "5601:5601"
+      - "15601:5601"
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     depends_on:
@@ -215,12 +281,13 @@ services:
   logstash:
     image: docker.elastic.co/logstash/logstash:8.11.0
     container_name: logstash
+    profiles: ["full"]
     volumes:
       - ./docker/logstash/pipeline:/usr/share/logstash/pipeline
       - ./docker/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
     ports:
-      - "5044:5044"
-      - "5000:5000"
+      - "15044:5044"
+      - "15000:5000"
     depends_on:
       - elasticsearch
 
