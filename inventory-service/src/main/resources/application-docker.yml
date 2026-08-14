@@ -6,3 +6,6 @@ spring:
   data:
     mongodb:
       uri: mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@mongodb:27017/inventory_db?authSource=admin
+
+pulsar:
+  service-url: pulsar://pulsar:6650

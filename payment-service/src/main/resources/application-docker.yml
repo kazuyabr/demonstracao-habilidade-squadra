@@ -11,3 +11,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+
+pulsar:
+  service-url: pulsar://pulsar:6650

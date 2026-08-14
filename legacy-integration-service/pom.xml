@@ -27,12 +27,6 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- JMS (TIBCO EMS compatible) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-artemis</artifactId>
-        </dependency>
-
         <!-- Messaging: Pulsar (modern side) -->
         <dependency>
             <groupId>org.apache.pulsar</groupId>
