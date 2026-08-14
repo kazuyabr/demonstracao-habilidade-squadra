@@ -126,6 +126,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
 
+    env:
+      KUBECONFIG_DEV: ${{ secrets.KUBECONFIG_DEV }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -134,13 +137,13 @@ jobs:
         uses: azure/setup-kubectl@v4
 
       - name: Deploy to Kubernetes (Dev)
-        if: ${{ secrets.KUBECONFIG_DEV != '' }}
+        if: env.KUBECONFIG_DEV != ''
         env:
-          KUBECONFIG: ${{ secrets.KUBECONFIG_DEV }}
+          KUBECONFIG: ${{ env.KUBECONFIG_DEV }}
         run: kubectl apply -k k8s/overlays/dev
 
       - name: Dev deployment skipped (no credentials)
-        if: ${{ secrets.KUBECONFIG_DEV == '' }}
+        if: env.KUBECONFIG_DEV == ''
         run: |
           echo "No KUBECONFIG_DEV secret configured - skipping actual deployment."
           echo "To enable, add a KUBECONFIG_DEV repository secret containing your kubeconfig."
@@ -151,6 +154,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
+    env:
+      KUBECONFIG_PROD: ${{ secrets.KUBECONFIG_PROD }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -159,13 +165,13 @@ jobs:
         uses: azure/setup-kubectl@v4
 
       - name: Deploy to Kubernetes (Production)
-        if: ${{ secrets.KUBECONFIG_PROD != '' }}
+        if: env.KUBECONFIG_PROD != ''
         env:
-          KUBECONFIG: ${{ secrets.KUBECONFIG_PROD }}
+          KUBECONFIG: ${{ env.KUBECONFIG_PROD }}
         run: kubectl apply -k k8s/overlays/prod
 
       - name: Production deployment skipped (no credentials)
-        if: ${{ secrets.KUBECONFIG_PROD == '' }}
+        if: env.KUBECONFIG_PROD == ''
         run: |
           echo "No KUBECONFIG_PROD secret configured - skipping actual deployment."
           echo "To enable, add a KUBECONFIG_PROD repository secret containing your kubeconfig."
