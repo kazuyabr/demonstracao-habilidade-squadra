@@ -30,13 +30,25 @@ services:
       - "11433:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
-      - ./docker/sqlserver/init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${SQLSERVER_SA_PASSWORD}" -Q "SELECT 1" || exit 1
+      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "${SQLSERVER_SA_PASSWORD}" -Q "SELECT 1" || exit 1
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 60s
+
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql-tools:latest
+    container_name: sqlserver-init
+    profiles: ["init"]
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      SA_PASSWORD: "${SQLSERVER_SA_PASSWORD}"
+    volumes:
+      - ./docker/sqlserver/init:/init
+    entrypoint: ["/bin/bash", "/init/sqlserver-init.sh"]
 
   mongodb:
     image: mongo:7.0
@@ -79,13 +91,16 @@ services:
       KEYCLOAK_ADMIN: "${KEYCLOAK_ADMIN_USER}"
       KEYCLOAK_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD}"
       KEYCLOAK_DEMO_PASSWORD: "${KEYCLOAK_DEMO_PASSWORD}"
+      KC_HOSTNAME: keycloak
+      KC_HOSTNAME_PORT: 8080
+      KC_PROXY: edge
     ports:
       - "18180:8080"
     volumes:
       - keycloak-data:/opt/keycloak/data
       - ./docker/keycloak/import:/opt/keycloak/data/import
     healthcheck:
-      test: curl -sf http://localhost:8080/realms/enterprise-platform | grep -q enterprise-platform
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8080'"]
       interval: 15s
       timeout: 10s
       retries: 20
@@ -208,8 +223,8 @@ services:
   # ---------------------------------------------------------------------------
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: frontend
     ports:
       - "3003:80"

@@ -10,33 +10,36 @@
 # (see .env). It is never committed to the repository.
 #
 # Usage (inside the running keycloak container):
-#   docker-compose exec keycloak /bin/bash /tmp/setup-demo-user.sh
+#   docker-compose exec keycloak /bin/bash /opt/keycloak/data/import/setup-demo-user.sh
 # =============================================================================
 
-set -euo pipefail
+set -e
 
 REALM="enterprise-platform"
-CLIENT="enterprise-order-platform"
 USERNAME="demouser"
 EMAIL="demouser@enterprise.local"
 FIRST_NAME="Demo"
 LAST_NAME="User"
 ROLES=("CUSTOMER" "OPERATOR")
 
-: "${KEYCLOAK_DEMO_PASSWORD:?KEYCLOAK_DEMO_PASSWORD must be set in .env}"
-
 KCADM="/opt/keycloak/bin/kcadm.sh"
+
+: "${KEYCLOAK_ADMIN:?KEYCLOAK_ADMIN must be set in .env}"
+: "${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD must be set in .env}"
+: "${KEYCLOAK_DEMO_PASSWORD:?KEYCLOAK_DEMO_PASSWORD must be set in .env}"
 
 # Authenticate as the admin user (from .env)
 "$KCADM" config credentials \
   --server http://localhost:8080 \
   --realm master \
-  --user "${KEYCLOAK_ADMIN:-admin}" \
-  --password "${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD must be set in .env}"
+  --user "$KEYCLOAK_ADMIN" \
+  --password "$KEYCLOAK_ADMIN_PASSWORD"
 
 # Create the demo user if it does not exist yet
 USER_ID=$("$KCADM" get users -r "$REALM" -q username="$USERNAME" --fields id 2>/dev/null \
-  | grep -o '"id"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | grep -o '"[^"]*"$' | tr -d '"')
+  | grep -o '"id"[[:space:]]*:[[:space:]]*"[^"]*"' \
+  | head -1 \
+  | sed 's/.*"id"[[:space:]]*:[[:space:]]*"//; s/"$//')
 
 if [ -z "$USER_ID" ]; then
   "$KCADM" create users -r "$REALM" \
@@ -45,7 +48,7 @@ if [ -z "$USER_ID" ]; then
     -s firstName="$FIRST_NAME" \
     -s lastName="$LAST_NAME" \
     -s enabled=true \
-    -s emailVerified=true
+    -s emailVerified=true >/dev/null
   echo "Demo user '$USERNAME' created."
 else
   echo "Demo user '$USERNAME' already exists."
@@ -62,9 +65,8 @@ echo "Password set for '$USERNAME'."
 for role in "${ROLES[@]}"; do
   "$KCADM" add-roles -r "$REALM" \
     --uusername "$USERNAME" \
-    --rolename "$role"
+    --rolename "$role" >/dev/null
   echo "Role '$role' assigned to '$USERNAME'."
 done
 
 echo "Demo user setup complete."
-echo "Login: $USERNAME / <KEYCLOAK_DEMO_PASSWORD> at http://localhost:18180/realms/enterprise-platform"
