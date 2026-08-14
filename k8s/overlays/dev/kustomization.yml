@@ -4,6 +4,20 @@ kind: Kustomization
 resources:
   - ../../base
 
+images:
+  - name: enterprise-order-platform/order-service
+    newName: ghcr.io/kazuyabr/demonstracao-habilidade-squadra/order-service
+    newTag: develop
+  - name: enterprise-order-platform/payment-service
+    newName: ghcr.io/kazuyabr/demonstracao-habilidade-squadra/payment-service
+    newTag: develop
+  - name: enterprise-order-platform/inventory-service
+    newName: ghcr.io/kazuyabr/demonstracao-habilidade-squadra/inventory-service
+    newTag: develop
+  - name: enterprise-order-platform/api-gateway
+    newName: ghcr.io/kazuyabr/demonstracao-habilidade-squadra/api-gateway
+    newTag: develop
+
 patches:
   - target:
       kind: Deployment
