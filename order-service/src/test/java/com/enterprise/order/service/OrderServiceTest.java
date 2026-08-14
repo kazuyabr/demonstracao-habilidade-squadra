@@ -1,5 +1,6 @@
 package com.enterprise.order.service;
 
+import com.enterprise.events.producer.EventProducer;
 import com.enterprise.order.domain.Order;
 import com.enterprise.order.domain.OrderStatus;
 import com.enterprise.order.dto.CreateOrderRequest;
@@ -38,6 +39,9 @@ class OrderServiceTest {
 
     @Mock
     private OrderNumberGenerator orderNumberGenerator;
+
+    @Mock
+    private EventProducer eventProducer;
 
     @InjectMocks
     private OrderService orderService;

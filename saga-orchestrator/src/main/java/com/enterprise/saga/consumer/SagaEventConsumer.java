@@ -67,6 +67,13 @@ public class SagaEventConsumer {
                 InventoryReservationFailedEvent.class
         );
 
+        eventConsumer.subscribe(
+                PulsarTopics.ORDER_CONFIRMED,
+                "saga-orchestrator",
+                this::handleOrderConfirmed,
+                OrderConfirmedEvent.class
+        );
+
         log.info("Saga Orchestrator subscribed to events");
     }
 
@@ -115,6 +122,17 @@ public class SagaEventConsumer {
                     event.getSagaInstanceId(),
                     "reserve-inventory",
                     event.getFailureReason()
+            );
+        }
+    }
+
+    private void handleOrderConfirmed(OrderConfirmedEvent event) {
+        log.info("Received OrderConfirmed event | SagaId: {}", event.getSagaInstanceId());
+        if (event.getSagaInstanceId() != null) {
+            sagaOrchestrator.handleStepCompleted(
+                    event.getSagaInstanceId(),
+                    "confirm-order",
+                    "Order confirmed successfully"
             );
         }
     }

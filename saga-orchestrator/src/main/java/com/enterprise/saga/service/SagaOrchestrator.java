@@ -151,7 +151,7 @@ public class SagaOrchestrator {
                 .build();
 
         saga.getSteps().add(step);
-        return sagaStepRepository.save(step);
+        return step;
     }
 
     /**
@@ -256,14 +256,14 @@ public class SagaOrchestrator {
                         .customerId(saga.getCustomerId())
                         .amount(java.math.BigDecimal.ZERO)
                         .build();
-                eventProducer.publish(PulsarTopics.PAYMENT_AUTHORIZED, event);
+                publishEvent(saga, event, PulsarTopics.PAYMENT_AUTHORIZED);
             }
             case "reserve-inventory" -> {
                 InventoryReservedEvent event = InventoryReservedEvent.builder()
                         .orderId(saga.getOrderId())
                         .reservationId("RES-" + System.currentTimeMillis())
                         .build();
-                eventProducer.publish(PulsarTopics.INVENTORY_RESERVED, event);
+                publishEvent(saga, event, PulsarTopics.INVENTORY_RESERVED);
             }
             case "confirm-order" -> {
                 OrderConfirmedEvent event = OrderConfirmedEvent.builder()
@@ -271,7 +271,7 @@ public class SagaOrchestrator {
                         .orderNumber(saga.getOrderNumber())
                         .customerId(saga.getCustomerId())
                         .build();
-                eventProducer.publish(PulsarTopics.ORDER_CONFIRMED, event);
+                publishEvent(saga, event, PulsarTopics.ORDER_CONFIRMED);
             }
             case "refund-payment" -> {
                 PaymentRefundedEvent event = PaymentRefundedEvent.builder()
@@ -279,13 +279,13 @@ public class SagaOrchestrator {
                         .customerId(saga.getCustomerId())
                         .reason("Saga compensation")
                         .build();
-                eventProducer.publish(PulsarTopics.PAYMENT_REFUNDED, event);
+                publishEvent(saga, event, PulsarTopics.PAYMENT_REFUNDED);
             }
             case "release-inventory" -> {
                 InventoryReleasedEvent event = InventoryReleasedEvent.builder()
                         .orderId(saga.getOrderId())
                         .build();
-                eventProducer.publish(PulsarTopics.INVENTORY_RELEASED, event);
+                publishEvent(saga, event, PulsarTopics.INVENTORY_RELEASED);
             }
             case "cancel-order" -> {
                 OrderCancelledEvent event = OrderCancelledEvent.builder()
@@ -294,10 +294,19 @@ public class SagaOrchestrator {
                         .customerId(saga.getCustomerId())
                         .reason("Saga compensation")
                         .build();
-                eventProducer.publish(PulsarTopics.ORDER_CANCELLED, event);
+                publishEvent(saga, event, PulsarTopics.ORDER_CANCELLED);
             }
             default -> throw new IllegalArgumentException("Unknown step: " + step.getStepId());
         }
+    }
+
+    /**
+     * Publish a domain event carrying the saga correlation metadata.
+     */
+    private void publishEvent(SagaInstance saga, DomainEvent event, String topic) {
+        event.setSagaInstanceId(saga.getSagaId());
+        event.setCorrelationId(saga.getOrderId());
+        eventProducer.publish(topic, event);
     }
 
     /**
