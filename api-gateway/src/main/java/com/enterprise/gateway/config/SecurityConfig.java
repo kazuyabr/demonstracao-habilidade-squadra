@@ -36,6 +36,7 @@ public class SecurityConfig {
                 // Public endpoints
                 .pathMatchers("/actuator/health").permitAll()
                 .pathMatchers("/actuator/info").permitAll()
+                .pathMatchers("/actuator/prometheus").permitAll()
                 .pathMatchers("/swagger-ui/**").permitAll()
                 .pathMatchers("/api-docs/**").permitAll()
 
