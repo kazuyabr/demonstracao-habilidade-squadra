@@ -1,5 +1,8 @@
 package com.enterprise.order.service;
 
+import com.enterprise.events.OrderCreatedEvent;
+import com.enterprise.events.config.PulsarTopics;
+import com.enterprise.events.producer.EventProducer;
 import com.enterprise.order.domain.Order;
 import com.enterprise.order.domain.OrderStatus;
 import com.enterprise.order.domain.OrderStatusHistory;
@@ -28,6 +31,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderStatusHistoryRepository historyRepository;
     private final OrderNumberGenerator orderNumberGenerator;
+    private final EventProducer eventProducer;
 
     /**
      * Creates a new order in PENDING status.
@@ -59,7 +63,33 @@ public class OrderService {
         log.info("Order created: {} | Customer: {} | Status: {}",
                 saved.getOrderNumber(), saved.getCustomerId(), saved.getStatus());
 
+        publishOrderCreated(saved);
+
         return toResponse(saved);
+    }
+
+    private void publishOrderCreated(Order order) {
+        List<OrderCreatedEvent.OrderItemData> items = order.getItems().stream()
+                .map(item -> OrderCreatedEvent.OrderItemData.builder()
+                        .productId(item.getProductId())
+                        .productName(item.getProductName())
+                        .quantity(item.getQuantity())
+                        .unitPrice(item.getUnitPrice())
+                        .build())
+                .toList();
+
+        OrderCreatedEvent event = OrderCreatedEvent.builder()
+                .orderId(order.getId().toString())
+                .orderNumber(order.getOrderNumber())
+                .customerId(order.getCustomerId().toString())
+                .totalAmount(order.getTotalAmount())
+                .currency(order.getCurrency())
+                .items(items)
+                .build();
+
+        event.setCorrelationId(order.getCorrelationId());
+        eventProducer.publish(PulsarTopics.ORDER_CREATED, event);
+        log.info("OrderCreated event published: {} | EventId: {}", order.getOrderNumber(), event.getEventId());
     }
 
     /**

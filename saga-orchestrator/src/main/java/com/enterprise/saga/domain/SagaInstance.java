@@ -150,6 +150,9 @@ public class SagaInstance {
         if (this.status == null) {
             this.status = SagaStatus.CREATED;
         }
+        if (this.currentStepId == null) {
+            this.currentStepId = "";
+        }
         if (this.completedSteps == null) {
             this.completedSteps = 0;
         }

@@ -39,20 +39,20 @@ public class SecurityConfig {
                 .pathMatchers("/swagger-ui/**").permitAll()
                 .pathMatchers("/api-docs/**").permitAll()
 
-                // Order Service - requires USER or ADMIN role
-                .pathMatchers("/api/orders/**").hasAnyRole("USER", "ADMIN")
+                // Order Service - requires CUSTOMER, OPERATOR or ADMIN role
+                .pathMatchers("/api/orders/**").hasAnyRole("CUSTOMER", "OPERATOR", "ADMIN")
 
-                // Payment Service - requires ADMIN role
-                .pathMatchers("/api/payments/**").hasRole("ADMIN")
+                // Payment Service - requires OPERATOR or ADMIN role
+                .pathMatchers("/api/payments/**").hasAnyRole("OPERATOR", "ADMIN")
 
-                // Inventory Service - requires USER or ADMIN role
-                .pathMatchers("/api/inventory/**").hasAnyRole("USER", "ADMIN")
+                // Inventory Service - requires CUSTOMER, OPERATOR or ADMIN role
+                .pathMatchers("/api/inventory/**").hasAnyRole("CUSTOMER", "OPERATOR", "ADMIN")
 
-                // Saga Orchestrator - requires ADMIN role
-                .pathMatchers("/api/sagas/**").hasRole("ADMIN")
+                // Saga Orchestrator - requires OPERATOR or ADMIN role
+                .pathMatchers("/api/sagas/**").hasAnyRole("OPERATOR", "ADMIN")
 
-                // Legacy Integration - requires ADMIN role
-                .pathMatchers("/api/legacy/**").hasRole("ADMIN")
+                // Legacy Integration - requires OPERATOR or ADMIN role
+                .pathMatchers("/api/legacy/**").hasAnyRole("OPERATOR", "ADMIN")
 
                 // All other requests require authentication
                 .anyExchange().authenticated()
