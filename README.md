@@ -82,19 +82,32 @@ docker-compose --profile full up -d
 
 ### Access Points
 
-Host ports use a non-default `1xxxx` range to avoid collisions with common local development servers. Internal service-to-service communication is unaffected.
+Host ports use a non-default range (`1xxxx`/`13xxx`) to avoid collisions with common local development servers. Internal service-to-service communication is unaffected.
+
+Only the endpoints you access from your browser are published to the host. The microservices themselves are reached through the API Gateway, so they do not expose ports.
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| Frontend | http://localhost:3003 | - |
+| Frontend | http://localhost:13003 | - |
 | API Gateway | http://localhost:18080 | OAuth2 |
 | API Docs (Swagger) | http://localhost:18080/swagger-ui.html | OAuth2 |
 | Keycloak Admin | http://localhost:18180 | `admin` / from `.env` |
-| Grafana | http://localhost:3007 | from `.env` |
+| Grafana | http://localhost:13007 | from `.env` |
 | Prometheus | http://localhost:19090 | - |
 | Kibana | http://localhost:15601 | - |
-| SQL Server | localhost:11433 | `sa` / from `.env` |
-| MongoDB | localhost:17017 | from `.env` |
+
+#### Optional direct database access
+
+SQL Server, MongoDB and Pulsar are **not exposed** on the host by default (they
+stay on the Docker network). To reach them directly from your machine
+(e.g. SSMS, MongoDB Compass), set the corresponding port in your `.env`:
+
+```bash
+SQLSERVER_HOST_PORT=11433
+MONGODB_HOST_PORT=17017
+PULSAR_BROKER_HOST_PORT=16650
+PULSAR_ADMIN_HOST_PORT=18090
+```
 
 ### Demo User (Keycloak)
 

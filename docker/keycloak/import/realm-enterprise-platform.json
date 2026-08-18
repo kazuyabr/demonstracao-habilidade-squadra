@@ -35,10 +35,10 @@
       "authorizationServicesEnabled": false,
       "protocol": "openid-connect",
       "redirectUris": [
-        "http://localhost:3003/*"
+        "http://localhost:13003/*"
       ],
       "webOrigins": [
-        "http://localhost:3003"
+        "http://localhost:13003"
       ],
       "defaultClientScopes": [
         "web-origins",
