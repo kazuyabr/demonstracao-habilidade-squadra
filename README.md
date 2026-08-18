@@ -88,7 +88,8 @@ Only the endpoints you access from your browser are published to the host. The m
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| Frontend | http://localhost:13003 | - |
+| Frontend (production build) | http://localhost:13003 | - |
+| Frontend (dev server, HMR) | http://localhost:13004 | - |
 | API Gateway | http://localhost:18080 | OAuth2 |
 | API Docs (Swagger) | http://localhost:18080/swagger-ui.html | OAuth2 |
 | Keycloak Admin | http://localhost:18180 | `admin` / from `.env` |
@@ -134,6 +135,27 @@ docker-compose down -v
 # Rebuild after code changes
 docker-compose build
 docker-compose up -d
+```
+
+### Frontend development (hot reload)
+
+For frontend work, use the **dev server** instead of rebuilding the static image:
+
+```bash
+docker-compose up frontend-dev    # http://localhost:13004
+```
+
+It mounts `./frontend` as a volume and runs the CRA dev server with HMR — save a
+source file and the browser updates instantly (no image rebuild, no manual
+refresh). API calls are proxied to the gateway, and Keycloak already accepts the
+`13004` redirect URI, so login works exactly like production.
+
+Add a dark/light theme toggle in the top bar (persisted in `localStorage`).
+
+Stop it with:
+
+```bash
+docker-compose stop frontend-dev
 ```
 
 ### Hardware Recommendations

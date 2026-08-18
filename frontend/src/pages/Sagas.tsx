@@ -123,7 +123,7 @@ export default function Sagas() {
                       </tr>
                       {expandedThis && (
                         <tr>
-                          <td colSpan={6} style={{ background: '#fafbfc' }}>
+                          <td colSpan={6} style={{ background: 'var(--row-hover)' }}>
                             <div style={{ padding: '0.5rem 0' }}>
                               <strong className="text-sm">Steps</strong>
                               {(saga.steps || []).length === 0 && <div className="text-sm muted mt-1">No step details available.</div>}

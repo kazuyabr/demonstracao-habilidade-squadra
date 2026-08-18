@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { useTheme } from '../hooks/useTheme';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: '▦', end: true },
@@ -22,6 +23,7 @@ function getInitials(name?: string): string {
 
 export default function Layout({ title, children }: { title: string; children: ReactNode }) {
   const { user, logout } = useAuth();
+  const { theme, toggle } = useTheme();
 
   return (
     <div className="layout">
@@ -48,13 +50,21 @@ export default function Layout({ title, children }: { title: string; children: R
             </NavLink>
           ))}
         </nav>
-        <div className="sidebar-footer">Distributed microservices demo · Java 21</div>
+        <div className="sidebar-footer">Distributed microservices demo · OAuth2 + Saga · v1.0</div>
       </aside>
 
       <div className="main">
         <header className="topbar">
           <div className="topbar-title">{title}</div>
           <div className="topbar-right">
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={toggle}
+              title="Toggle theme"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+            </button>
             <div className="user-chip">
               <div className="user-avatar">{getInitials(user?.name || user?.preferred_username)}</div>
               <div className="user-meta">
