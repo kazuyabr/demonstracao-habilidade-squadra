@@ -1,72 +1,104 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import config from '../config';
+import Layout from '../components/Layout';
+import StatusBadge from '../components/StatusBadge';
+import { api } from '../api/client';
 
 interface Product {
   id: string;
   name: string;
   sku: string;
-  quantityAvailable: number;
-  quantityReserved: number;
+  category?: string;
+  price?: number;
+  quantityAvailable?: number;
+  quantityReserved?: number;
+  totalQuantity?: number;
+  reservedQuantity?: number;
+  availableQuantity?: number;
 }
 
-function Inventory() {
+function available(product: Product): number {
+  return product.quantityAvailable ?? product.availableQuantity ?? 0;
+}
+
+function reserved(product: Product): number {
+  return product.quantityReserved ?? product.reservedQuantity ?? 0;
+}
+
+export default function Inventory() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const load = async () => {
       try {
-        const response = await axios.get(`${config.apiGateway}/api/inventory/products`);
-        setProducts(response.data);
-      } catch (error) {
-        console.error('Error fetching products:', error);
+        const res = await api.get('/api/inventory/products');
+        const data = res.data?.content ?? res.data ?? [];
+        setProducts(Array.isArray(data) ? data : []);
+      } catch {
+        setError(true);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchProducts();
+    load();
   }, []);
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading...</div>;
-
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Inventory</h1>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ borderBottom: '2px solid #ddd' }}>
-            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Name</th>
-            <th style={{ padding: '0.5rem', textAlign: 'left' }}>SKU</th>
-            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Available</th>
-            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Reserved</th>
-            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((product) => (
-            <tr key={product.id} style={{ borderBottom: '1px solid #ddd' }}>
-              <td style={{ padding: '0.5rem' }}>{product.name}</td>
-              <td style={{ padding: '0.5rem' }}>{product.sku}</td>
-              <td style={{ padding: '0.5rem' }}>{product.quantityAvailable}</td>
-              <td style={{ padding: '0.5rem' }}>{product.quantityReserved}</td>
-              <td style={{ padding: '0.5rem' }}>
-                <span style={{
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '4px',
-                  background: product.quantityAvailable > 0 ? '#4caf50' : '#f44336',
-                  color: 'white'
-                }}>
-                  {product.quantityAvailable > 0 ? 'In Stock' : 'Out of Stock'}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Layout title="Inventory">
+      <h1 className="page-title">Inventory</h1>
+      <p className="page-subtitle">Product catalog and stock levels (MongoDB).</p>
+
+      <div className="card">
+        {loading ? (
+          <div className="loading-row"><span className="spinner" /> Loading inventory…</div>
+        ) : error ? (
+          <div className="empty-state">
+            <div className="empty-icon">⚠️</div>
+            <h3>Could not load inventory</h3>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">▥</div>
+            <h3>No products in the catalog</h3>
+            <p>Seed the MongoDB catalog to see products here.</p>
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Category</th>
+                  <th>Price</th>
+                  <th>Available</th>
+                  <th>Reserved</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p) => {
+                  const avail = available(p);
+                  const resv = reserved(p);
+                  const inStock = avail > 0;
+                  return (
+                    <tr key={p.id}>
+                      <td>{p.name}</td>
+                      <td className="mono">{p.sku}</td>
+                      <td className="muted">{p.category || '—'}</td>
+                      <td>{p.price != null ? `R$ ${Number(p.price).toLocaleString('pt-BR')}` : '—'}</td>
+                      <td>{avail}</td>
+                      <td className="muted">{resv}</td>
+                      <td><StatusBadge status={inStock ? 'In stock' : 'Out of stock'} /></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </Layout>
   );
 }
-
-export default Inventory;
