@@ -230,6 +230,32 @@ services:
     depends_on:
       - api-gateway
 
+  # Dev server with hot reload (HMR). Mounts ./frontend as a volume so any
+  # edit to a source file is picked up instantly by the browser.
+  #   docker-compose up frontend-dev   ->  http://localhost:13004
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: frontend-dev
+    ports:
+      - "13004:3000"
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "300"
+      WATCHPACK_POLLING: "true"
+      WDS_SOCKET_HOST: "localhost"
+      WDS_SOCKET_PORT: "13004"
+      REACT_APP_KEYCLOAK_URL: "${KEYCLOAK_URL:-http://localhost:18180}"
+      REACT_APP_KEYCLOAK_REALM: "enterprise-platform"
+      REACT_APP_KEYCLOAK_CLIENT_ID: "enterprise-order-platform"
+      REACT_APP_REDIRECT_URI: "${FRONTEND_DEV_REDIRECT_URI:-http://localhost:13004/callback}"
+    volumes:
+      - ./frontend:/app
+      - frontend-dev-node_modules:/app/node_modules
+    depends_on:
+      - api-gateway
+
   # ---------------------------------------------------------------------------
   # Observability (core)
   # ---------------------------------------------------------------------------
@@ -313,3 +339,4 @@ volumes:
   prometheus-data:
   grafana-data:
   elasticsearch-data:
+  frontend-dev-node_modules:
