@@ -1,0 +1,14 @@
+# Development stage - runs the CRA dev server with HMR
+# Source is bind-mounted from ./frontend:/app, so edits hot-reload instantly.
+FROM node:18-alpine
+WORKDIR /app
+
+# Install dependencies first (layer cacheable)
+COPY package.json ./
+RUN npm install
+
+# Copy remaining source (src/ is mounted over this at runtime via the volume)
+COPY . .
+
+EXPOSE 3000
+CMD ["npm", "start"]
