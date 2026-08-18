@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import config from '../config';
+import Layout from '../components/Layout';
+import StatCard from '../components/StatCard';
+import DonutChart, { BarRow } from '../components/Charts';
+import { api } from '../api/client';
 
 interface Stats {
   total: number;
@@ -12,68 +14,92 @@ interface Stats {
   failed: number;
 }
 
-function Dashboard() {
+export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const load = async () => {
       try {
-        const response = await axios.get(`${config.apiGateway}/api/sagas/stats`);
-        setStats(response.data);
-      } catch (error) {
-        console.error('Error fetching stats:', error);
+        const res = await api.get('/api/sagas/stats');
+        setStats(res.data);
+      } catch {
+        setError(true);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchStats();
+    load();
   }, []);
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading...</div>;
+  if (loading) {
+    return (
+      <Layout title="Dashboard">
+        <div className="loading-row"><span className="spinner" /> Loading metrics…</div>
+      </Layout>
+    );
+  }
+
+  if (error || !stats) {
+    return (
+      <Layout title="Dashboard">
+        <div className="empty-state">
+          <div className="empty-icon">⚠️</div>
+          <h3>Could not load metrics</h3>
+          <p>Make sure the platform is running and you are signed in.</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  const donutSlices = [
+    { label: 'Completed', value: stats.completed, color: '#16a34a' },
+    { label: 'In progress', value: stats.inProgress, color: '#2563eb' },
+    { label: 'Compensating', value: stats.compensating, color: '#d97706' },
+    { label: 'Compensated', value: stats.compensated, color: '#9333ea' },
+    { label: 'Failed', value: stats.failed, color: '#dc2626' },
+    { label: 'Created', value: stats.created, color: '#64748b' }
+  ].filter((s) => s.value > 0);
+
+  const barMax = Math.max(stats.completed, stats.inProgress, stats.failed, stats.compensated, 1);
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Enterprise Order Platform - Dashboard</h1>
-      <p>Welcome to the Enterprise Order Processing Platform</p>
+    <Layout title="Dashboard">
+      <h1 className="page-title">Order Processing Overview</h1>
+      <p className="page-subtitle">Live view of the distributed order platform and its Sagas.</p>
 
-      <h2>Saga Statistics</h2>
-      {stats ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-          <div style={{ padding: '1rem', background: '#e3f2fd', borderRadius: '8px' }}>
-            <h3>Total</h3>
-            <p style={{ fontSize: '2rem', margin: 0 }}>{stats.total}</p>
+      <div className="stats-grid">
+        <StatCard label="Total Orders" value={stats.total} accent="primary" icon={<span>∑</span>} />
+        <StatCard label="Completed" value={stats.completed} accent="success" icon={<span>✓</span>} />
+        <StatCard label="In Progress" value={stats.inProgress} accent="info" icon={<span>↻</span>} />
+        <StatCard label="Failed / Compensated" value={stats.failed + stats.compensated} accent="danger" icon={<span>✕</span>} />
+      </div>
+
+      <div className="grid-2">
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Saga status</div>
+              <div className="card-subtitle">Distribution by current state</div>
+            </div>
           </div>
-          <div style={{ padding: '1rem', background: '#e8f5e9', borderRadius: '8px' }}>
-            <h3>Completed</h3>
-            <p style={{ fontSize: '2rem', margin: 0 }}>{stats.completed}</p>
-          </div>
-          <div style={{ padding: '1rem', background: '#fff3e0', borderRadius: '8px' }}>
-            <h3>In Progress</h3>
-            <p style={{ fontSize: '2rem', margin: 0 }}>{stats.inProgress}</p>
-          </div>
-          <div style={{ padding: '1rem', background: '#ffebee', borderRadius: '8px' }}>
-            <h3>Failed</h3>
-            <p style={{ fontSize: '2rem', margin: 0 }}>{stats.failed}</p>
-          </div>
+          <DonutChart slices={donutSlices} totalLabel="Sagas" />
         </div>
-      ) : (
-        <p>No statistics available</p>
-      )}
 
-      <h2>Services</h2>
-      <ul>
-        <li>Order Service (port 8081)</li>
-        <li>Payment Service (port 8082)</li>
-        <li>Inventory Service (port 8083)</li>
-        <li>Notification Service (port 8084)</li>
-        <li>Legacy Integration Service (port 8085)</li>
-        <li>Saga Orchestrator (port 8086)</li>
-        <li>API Gateway (port 8080)</li>
-      </ul>
-    </div>
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Saga outcomes</div>
+              <div className="card-subtitle">Final and transitional states</div>
+            </div>
+          </div>
+          <BarRow label="Completed" value={stats.completed} max={barMax} color="#16a34a" />
+          <BarRow label="In progress" value={stats.inProgress} max={barMax} color="#2563eb" />
+          <BarRow label="Compensated" value={stats.compensated} max={barMax} color="#9333ea" />
+          <BarRow label="Failed" value={stats.failed} max={barMax} color="#dc2626" />
+        </div>
+      </div>
+    </Layout>
   );
 }
-
-export default Dashboard;
