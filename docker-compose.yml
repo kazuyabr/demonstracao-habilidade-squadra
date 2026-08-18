@@ -2,18 +2,29 @@
 # Enterprise Order Processing Platform - Docker Compose
 # =============================================================================
 #
-# Host ports use a non-default range (1xxxx) to avoid collisions with local
-# development servers (Node on 3000, Spring on 8080, etc.). Container ports
-# remain untouched, so service-to-service communication is unaffected.
+# Host ports use a non-default range (1xxxx/13xxx) to avoid collisions with
+# local development servers (Node on 3000, Spring on 8080, etc.). Container
+# ports remain untouched, so service-to-service communication is unaffected.
+#
+# Only the endpoints a user accesses from the host are published (gateway,
+# frontend, keycloak, grafana, prometheus, kibana, elasticsearch). Internal
+# microservices are not exposed to the host - they are reached through the
+# API Gateway and scraped by Prometheus using the Docker network.
+#
+# Databases and messaging (SQL Server, MongoDB, Pulsar) are not exposed by
+# default. To reach them directly from the host (e.g. SSMS, Compass), set the
+# corresponding *_HOST_PORT variable in .env.
 #
 # Profiles:
 #   - default (core):      infrastructure + microservices + frontend + Prometheus + Grafana
 #   - --profile full:      adds Elasticsearch, Kibana and Logstash (heavier)
+#   - --profile init:      one-shot SQL Server database initialization
 #
 # Quick start:
 #   cp .env.example .env   # then fill in the values
 #   docker-compose up -d   # core stack
 #   docker-compose --profile full up -d   # everything
+#   docker-compose --profile init up sqlserver-init   # create databases
 
 services:
   # ---------------------------------------------------------------------------
@@ -27,7 +38,7 @@ services:
       SA_PASSWORD: "${SQLSERVER_SA_PASSWORD}"
       MSSQL_PID: "Developer"
     ports:
-      - "11433:1433"
+      - "${SQLSERVER_HOST_PORT:-}:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
     healthcheck:
@@ -54,7 +65,7 @@ services:
     image: mongo:7.0
     container_name: mongodb
     ports:
-      - "17017:27017"
+      - "${MONGODB_HOST_PORT:-}:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: "${MONGODB_USERNAME}"
       MONGO_INITDB_ROOT_PASSWORD: "${MONGODB_PASSWORD}"
@@ -72,8 +83,8 @@ services:
     container_name: pulsar
     command: bin/pulsar standalone
     ports:
-      - "16650:6650"
-      - "18090:8080"
+      - "${PULSAR_BROKER_HOST_PORT:-}:6650"
+      - "${PULSAR_ADMIN_HOST_PORT:-}:8080"
     volumes:
       - pulsar-data:/pulsar/data
     healthcheck:
@@ -114,8 +125,6 @@ services:
       context: .
       dockerfile: order-service/Dockerfile
     container_name: order-service
-    ports:
-      - "18081:8081"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       ORDER_DB_PASSWORD: "${ORDER_DB_PASSWORD}"
@@ -130,8 +139,6 @@ services:
       context: .
       dockerfile: payment-service/Dockerfile
     container_name: payment-service
-    ports:
-      - "18082:8082"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       PAYMENT_DB_PASSWORD: "${PAYMENT_DB_PASSWORD}"
@@ -146,8 +153,6 @@ services:
       context: .
       dockerfile: inventory-service/Dockerfile
     container_name: inventory-service
-    ports:
-      - "18083:8083"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       MONGODB_USERNAME: "${MONGODB_USERNAME}"
@@ -163,8 +168,6 @@ services:
       context: .
       dockerfile: notification-service/Dockerfile
     container_name: notification-service
-    ports:
-      - "18084:8084"
     environment:
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
@@ -176,8 +179,6 @@ services:
       context: .
       dockerfile: legacy-integration-service/Dockerfile
     container_name: legacy-integration-service
-    ports:
-      - "18085:8085"
     environment:
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
@@ -189,8 +190,6 @@ services:
       context: .
       dockerfile: saga-orchestrator/Dockerfile
     container_name: saga-orchestrator
-    ports:
-      - "18086:8086"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SAGA_DB_PASSWORD: "${SAGA_DB_PASSWORD}"
@@ -227,7 +226,7 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "3003:80"
+      - "13003:80"
     depends_on:
       - api-gateway
 
@@ -255,7 +254,7 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
-      - "3007:3000"
+      - "13007:3000"
     environment:
       GF_SECURITY_ADMIN_USER: "${GRAFANA_ADMIN_USER}"
       GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD}"
