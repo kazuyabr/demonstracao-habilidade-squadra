@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import config from '../config';
+import React, { useCallback, useEffect, useState } from 'react';
+import Layout from '../components/Layout';
+import StatusBadge from '../components/StatusBadge';
+import { api } from '../api/client';
 
 interface Order {
   id: string;
@@ -8,75 +9,150 @@ interface Order {
   customerId: string;
   status: string;
   totalAmount: number;
+  currency: string;
   createdAt: string;
 }
 
-function Orders() {
+export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [formError, setFormError] = useState('');
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await axios.get(`${config.apiGateway}/api/orders`);
-        setOrders(response.data);
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const [productName, setProductName] = useState('Laptop');
+  const [productId, setProductId] = useState('PROD-001');
+  const [quantity, setQuantity] = useState('1');
+  const [unitPrice, setUnitPrice] = useState('4999.99');
 
-    fetchOrders();
+  const load = useCallback(async () => {
+    try {
+      const res = await api.get('/api/orders');
+      const data = res.data?.content ?? res.data ?? [];
+      setOrders(Array.isArray(data) ? data : []);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'CONFIRMED': return '#4caf50';
-      case 'PENDING': return '#ff9800';
-      case 'CANCELLED': return '#f44336';
-      default: return '#9e9e9e';
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const createOrder = async () => {
+    setFormError('');
+    setCreating(true);
+    try {
+      const body = {
+        customerId: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
+        items: [
+          {
+            productId,
+            productName,
+            quantity: Number(quantity),
+            unitPrice: Number(unitPrice)
+          }
+        ]
+      };
+      await api.post('/api/orders', body);
+      setShowForm(false);
+      setLoading(true);
+      await load();
+    } catch (e: any) {
+      setFormError(e?.response?.data?.message || 'Failed to create order');
+    } finally {
+      setCreating(false);
     }
   };
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading...</div>;
-
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Orders</h1>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ borderBottom: '2px solid #ddd' }}>
-            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Order Number</th>
-            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Customer</th>
-            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Status</th>
-            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Amount</th>
-            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Created</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map((order) => (
-            <tr key={order.id} style={{ borderBottom: '1px solid #ddd' }}>
-              <td style={{ padding: '0.5rem' }}>{order.orderNumber}</td>
-              <td style={{ padding: '0.5rem' }}>{order.customerId}</td>
-              <td style={{ padding: '0.5rem' }}>
-                <span style={{
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '4px',
-                  background: getStatusColor(order.status),
-                  color: 'white'
-                }}>
-                  {order.status}
-                </span>
-              </td>
-              <td style={{ padding: '0.5rem' }}>${order.totalAmount?.toFixed(2)}</td>
-              <td style={{ padding: '0.5rem' }}>{new Date(order.createdAt).toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Layout title="Orders">
+      <div className="flex-between mb-3">
+        <div>
+          <h1 className="page-title">Orders</h1>
+          <p className="page-subtitle">Orders are processed through the Saga orchestrator.</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
+          {showForm ? 'Cancel' : '+ New order'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="card mb-3">
+          <div className="card-header">
+            <div className="card-title">Create order</div>
+            <div className="card-subtitle">This triggers the payment → inventory → confirm Saga</div>
+          </div>
+          <div className="form-grid">
+            <div className="form-field">
+              <label>Product name</label>
+              <input value={productName} onChange={(e) => setProductName(e.target.value)} />
+            </div>
+            <div className="form-field">
+              <label>Product ID</label>
+              <input value={productId} onChange={(e) => setProductId(e.target.value)} />
+            </div>
+            <div className="form-field">
+              <label>Quantity</label>
+              <input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+            </div>
+            <div className="form-field">
+              <label>Unit price (BRL)</label>
+              <input type="number" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} />
+            </div>
+          </div>
+          {formError && <p className="text-sm" style={{ color: 'var(--danger)' }}>{formError}</p>}
+          <div className="form-actions">
+            <button className="btn btn-outline" onClick={() => setShowForm(false)}>Cancel</button>
+            <button className="btn btn-primary" disabled={creating} onClick={createOrder}>
+              {creating ? 'Creating…' : 'Create order'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="card">
+        {loading ? (
+          <div className="loading-row"><span className="spinner" /> Loading orders…</div>
+        ) : error ? (
+          <div className="empty-state">
+            <div className="empty-icon">⚠️</div>
+            <h3>Could not load orders</h3>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">▤</div>
+            <h3>No orders yet</h3>
+            <p>Create an order to see the Saga in action.</p>
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Order number</th>
+                  <th>Status</th>
+                  <th>Amount</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.id}>
+                    <td className="mono">{order.orderNumber}</td>
+                    <td><StatusBadge status={order.status} /></td>
+                    <td>{order.currency} {Number(order.totalAmount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td className="muted">{order.createdAt ? new Date(order.createdAt).toLocaleString() : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </Layout>
   );
 }
-
-export default Orders;

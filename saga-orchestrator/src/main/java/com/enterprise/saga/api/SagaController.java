@@ -6,6 +6,7 @@ import com.enterprise.saga.domain.SagaStep;
 import com.enterprise.saga.domain.SagaStepRepository;
 import com.enterprise.saga.domain.SagaStatus;
 import com.enterprise.saga.domain.StepStatus;
+import com.enterprise.saga.dto.SagaResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -38,10 +39,10 @@ public class SagaController {
      */
     @GetMapping
     @Operation(summary = "Get all saga instances", description = "Returns a list of all saga instances with their current status")
-    public ResponseEntity<List<SagaInstance>> getAllSagas() {
+    public ResponseEntity<List<SagaResponse>> getAllSagas() {
         log.debug("Getting all sagas");
         List<SagaInstance> sagas = sagaInstanceRepository.findAll();
-        return ResponseEntity.ok(sagas);
+        return ResponseEntity.ok(sagas.stream().map(this::toResponse).collect(Collectors.toList()));
     }
 
     /**
@@ -49,10 +50,10 @@ public class SagaController {
      */
     @GetMapping("/{sagaId}")
     @Operation(summary = "Get saga by ID", description = "Returns a saga instance with all its steps")
-    public ResponseEntity<SagaInstance> getSagaById(@PathVariable String sagaId) {
+    public ResponseEntity<SagaResponse> getSagaById(@PathVariable String sagaId) {
         log.debug("Getting saga: {}", sagaId);
         return sagaInstanceRepository.findBySagaId(sagaId)
-                .map(ResponseEntity::ok)
+                .map(saga -> ResponseEntity.ok(toResponse(saga)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -61,10 +62,10 @@ public class SagaController {
      */
     @GetMapping("/{sagaId}/steps")
     @Operation(summary = "Get saga steps", description = "Returns all steps for a saga instance")
-    public ResponseEntity<List<SagaStep>> getSagaSteps(@PathVariable String sagaId) {
+    public ResponseEntity<List<SagaResponse.SagaStepResponse>> getSagaSteps(@PathVariable String sagaId) {
         log.debug("Getting steps for saga: {}", sagaId);
         List<SagaStep> steps = sagaStepRepository.findBySagaIdOrdered(sagaId);
-        return ResponseEntity.ok(steps);
+        return ResponseEntity.ok(steps.stream().map(this::toStepResponse).collect(Collectors.toList()));
     }
 
     /**
@@ -92,10 +93,10 @@ public class SagaController {
      */
     @GetMapping("/status/{status}")
     @Operation(summary = "Get sagas by status", description = "Returns all sagas with a specific status")
-    public ResponseEntity<List<SagaInstance>> getSagasByStatus(@PathVariable SagaStatus status) {
+    public ResponseEntity<List<SagaResponse>> getSagasByStatus(@PathVariable SagaStatus status) {
         log.debug("Getting sagas with status: {}", status);
         List<SagaInstance> sagas = sagaInstanceRepository.findByStatus(status);
-        return ResponseEntity.ok(sagas);
+        return ResponseEntity.ok(sagas.stream().map(this::toResponse).collect(Collectors.toList()));
     }
 
     /**
@@ -103,10 +104,54 @@ public class SagaController {
      */
     @GetMapping("/order/{orderId}")
     @Operation(summary = "Get saga by order ID", description = "Returns the saga instance for a specific order")
-    public ResponseEntity<SagaInstance> getSagaByOrderId(@PathVariable String orderId) {
+    public ResponseEntity<SagaResponse> getSagaByOrderId(@PathVariable String orderId) {
         log.debug("Getting saga for order: {}", orderId);
         return sagaInstanceRepository.findByOrderId(orderId)
-                .map(ResponseEntity::ok)
+                .map(saga -> ResponseEntity.ok(toResponse(saga)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    private SagaResponse toResponse(SagaInstance saga) {
+        List<SagaResponse.SagaStepResponse> steps = saga.getSteps().stream()
+                .map(this::toStepResponse)
+                .collect(Collectors.toList());
+
+        return SagaResponse.builder()
+                .id(saga.getId())
+                .sagaId(saga.getSagaId())
+                .sagaType(saga.getSagaType())
+                .orderId(saga.getOrderId())
+                .customerId(saga.getCustomerId())
+                .orderNumber(saga.getOrderNumber())
+                .status(saga.getStatus())
+                .currentStepId(saga.getCurrentStepId())
+                .completedSteps(saga.getCompletedSteps())
+                .totalSteps(saga.getTotalSteps())
+                .failureReason(saga.getFailureReason())
+                .createdAt(saga.getCreatedAt())
+                .updatedAt(saga.getUpdatedAt())
+                .completedAt(saga.getCompletedAt())
+                .timeoutSeconds(saga.getTimeoutSeconds())
+                .timedOut(saga.getTimedOut())
+                .steps(steps)
+                .build();
+    }
+
+    private SagaResponse.SagaStepResponse toStepResponse(SagaStep step) {
+        return SagaResponse.SagaStepResponse.builder()
+                .id(step.getId())
+                .stepId(step.getStepId())
+                .stepOrder(step.getStepOrder())
+                .name(step.getName())
+                .targetService(step.getTargetService())
+                .type(step.getType())
+                .status(step.getStatus())
+                .errorMessage(step.getErrorMessage())
+                .retryCount(step.getRetryCount())
+                .maxRetries(step.getMaxRetries())
+                .startedAt(step.getStartedAt())
+                .completedAt(step.getCompletedAt())
+                .createdAt(step.getCreatedAt())
+                .build();
     }
 }

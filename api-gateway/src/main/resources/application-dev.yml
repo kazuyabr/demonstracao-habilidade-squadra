@@ -11,19 +11,19 @@ spring:
           predicates:
             - Path=/api/orders/**,/api/orders
           filters:
-            - RewritePath=/api/orders/?(?<segment>.*), /api/v1/orders$\{segment}
+            - RewritePath=/api/orders(?<segment>.*), /api/v1/orders$\{segment}
         - id: payment-service
           uri: http://localhost:8082
           predicates:
             - Path=/api/payments/**,/api/payments
           filters:
-            - RewritePath=/api/payments/?(?<segment>.*), /api/v1/payments$\{segment}
+            - RewritePath=/api/payments(?<segment>.*), /api/v1/payments$\{segment}
         - id: inventory-service
           uri: http://localhost:8083
           predicates:
             - Path=/api/inventory/**,/api/inventory
           filters:
-            - RewritePath=/api/inventory/?(?<segment>.*), /api/v1/inventory$\{segment}
+            - RewritePath=/api/inventory(?<segment>.*), /api/v1/inventory$\{segment}
         - id: notification-service
           uri: http://localhost:8084
           predicates:
@@ -41,5 +41,4 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8180/realms/enterprise-platform
           jwk-set-uri: http://localhost:8180/realms/enterprise-platform/protocol/openid-connect/certs
