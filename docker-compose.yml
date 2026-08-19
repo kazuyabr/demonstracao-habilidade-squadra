@@ -224,6 +224,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        REACT_APP_DEMO_USERNAME: "demouser"
+        REACT_APP_DEMO_PASSWORD: "${KEYCLOAK_DEMO_PASSWORD:-}"
     container_name: frontend
     ports:
       - "13003:80"
@@ -250,6 +253,8 @@ services:
       REACT_APP_KEYCLOAK_REALM: "enterprise-platform"
       REACT_APP_KEYCLOAK_CLIENT_ID: "enterprise-order-platform"
       REACT_APP_REDIRECT_URI: "${FRONTEND_DEV_REDIRECT_URI:-http://localhost:13004/callback}"
+      REACT_APP_DEMO_USERNAME: "demouser"
+      REACT_APP_DEMO_PASSWORD: "${KEYCLOAK_DEMO_PASSWORD:-}"
     volumes:
       - ./frontend:/app
       - frontend-dev-node_modules:/app/node_modules
