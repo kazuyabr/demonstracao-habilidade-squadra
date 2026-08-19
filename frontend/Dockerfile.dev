@@ -10,5 +10,9 @@ RUN npm install
 # Copy remaining source (src/ is mounted over this at runtime via the volume)
 COPY . .
 
+# Demo credentials for the dev server come from the compose environment.
+ENV REACT_APP_DEMO_USERNAME=${REACT_APP_DEMO_USERNAME:-demouser}
+ENV REACT_APP_DEMO_PASSWORD=${REACT_APP_DEMO_PASSWORD:-}
+
 EXPOSE 3000
 CMD ["npm", "start"]
