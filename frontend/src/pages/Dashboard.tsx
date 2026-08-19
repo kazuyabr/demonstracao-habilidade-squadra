@@ -18,14 +18,16 @@ export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       try {
         const res = await api.get('/api/sagas/stats');
         setStats(res.data);
-      } catch {
-        setError(true);
+      } catch (e: any) {
+        if (e?.response?.status === 403) setForbidden(true);
+        else setError(true);
       } finally {
         setLoading(false);
       }
@@ -37,6 +39,18 @@ export default function Dashboard() {
     return (
       <Layout title="Dashboard">
         <div className="loading-row"><span className="spinner" /> Loading metrics…</div>
+      </Layout>
+    );
+  }
+
+  if (forbidden) {
+    return (
+      <Layout title="Dashboard">
+        <div className="empty-state">
+          <div className="empty-icon">🔒</div>
+          <h3>Operational metrics require the OPERATOR role</h3>
+          <p>Your account has the <b>CUSTOMER</b> role. Explore <a href="/orders">Orders</a> and <a href="/inventory">Inventory</a>, or sign in with the demo account to see the full Saga overview.</p>
+        </div>
       </Layout>
     );
   }
