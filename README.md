@@ -120,6 +120,12 @@ docker-compose exec keycloak bash /opt/keycloak/data/import/setup-demo-user.sh
 
 The demo user (`demouser`) password comes from `KEYCLOAK_DEMO_PASSWORD` in your `.env`. Roles `CUSTOMER` and `OPERATOR` are assigned automatically.
 
+### First login & self-registration
+
+- Open **http://localhost:13003** (or **:13004** for the dev server).
+- The login screen shows the **demo credentials** (baked from your `.env` into the local build) — just type them into the Keycloak form after clicking *Sign in with Keycloak*.
+- Visitors can also click **Create account** to self-register. New accounts are created in Keycloak with the `CUSTOMER` role (orders and inventory views). Saga/Payment pages require the `OPERATOR` role, which only the demo account has — a nice live demonstration of role-based access control.
+
 ### Managing the stack
 
 ```bash
