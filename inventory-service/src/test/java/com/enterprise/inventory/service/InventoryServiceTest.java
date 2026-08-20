@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -58,8 +59,8 @@ class InventoryServiceTest {
                 .quantity(10)
                 .build();
 
-        when(reservationRepository.findByOrderIdAndProductId("order-123", "PROD-001"))
-                .thenReturn(Optional.empty());
+        when(reservationRepository.findAllByOrderIdAndProductId("order-123", "PROD-001"))
+                .thenReturn(Collections.emptyList());
         when(inventoryItemRepository.findByProductId("PROD-001"))
                 .thenReturn(Optional.of(inventoryItem));
         when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -86,8 +87,8 @@ class InventoryServiceTest {
                 .quantity(200)
                 .build();
 
-        when(reservationRepository.findByOrderIdAndProductId("order-456", "PROD-001"))
-                .thenReturn(Optional.empty());
+        when(reservationRepository.findAllByOrderIdAndProductId("order-456", "PROD-001"))
+                .thenReturn(Collections.emptyList());
         when(inventoryItemRepository.findByProductId("PROD-001"))
                 .thenReturn(Optional.of(inventoryItem));
         when(reservationRepository.save(any(StockReservation.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -114,8 +115,8 @@ class InventoryServiceTest {
                 .status(ReservationStatus.CONFIRMED)
                 .build();
 
-        when(reservationRepository.findByOrderIdAndProductId("order-123", "PROD-001"))
-                .thenReturn(Optional.of(reservation));
+        when(reservationRepository.findAllByOrderIdAndProductId("order-123", "PROD-001"))
+                .thenReturn(java.util.List.of(reservation));
         when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
         when(reservationRepository.save(any(StockReservation.class))).thenAnswer(inv -> inv.getArgument(0));
 
