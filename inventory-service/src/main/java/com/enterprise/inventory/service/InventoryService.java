@@ -37,7 +37,8 @@ public class InventoryService {
      */
     public StockReservationResponse reserveStock(ReserveStockRequest request) {
         // Check for existing reservation (idempotency)
-        reservationRepository.findByOrderIdAndProductId(request.getOrderId(), request.getProductId())
+        reservationRepository.findAllByOrderIdAndProductId(request.getOrderId(), request.getProductId()).stream()
+                .findFirst()
                 .ifPresent(existing -> {
                     if (existing.getStatus() != ReservationStatus.RELEASED) {
                         throw new IllegalStateException("Reservation already exists for order " +
@@ -88,9 +89,24 @@ public class InventoryService {
      * Called when the Saga fails and the order needs to be cancelled.
      */
     public StockReservationResponse releaseStock(String orderId, String productId, String reason) {
-        StockReservation reservation = reservationRepository.findByOrderIdAndProductId(orderId, productId)
-                .orElseThrow(() -> new RuntimeException(
-                        "Reservation not found for order " + orderId + " and product " + productId));
+        StockReservation reservation = reservationRepository
+                .findAllByOrderIdAndProductId(orderId, productId).stream()
+                .findFirst()
+                .orElse(null);
+
+        // Nothing was reserved (e.g. reservation never succeeded). Compensating
+        // a reservation that does not exist is a no-op, so return 200 instead of
+        // failing the whole compensation.
+        if (reservation == null) {
+            log.info("No reservation to release for Order {} | Product {} (no-op)", orderId, productId);
+            return StockReservationResponse.builder()
+                    .orderId(orderId)
+                    .productId(productId)
+                    .quantity(0)
+                    .status(ReservationStatus.RELEASED)
+                    .reason(reason)
+                    .build();
+        }
 
         if (reservation.getStatus() == ReservationStatus.RELEASED) {
             log.info("Reservation already released: Order {} | Product {}", orderId, productId);
