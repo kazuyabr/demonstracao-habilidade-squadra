@@ -25,6 +25,15 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+# Internal service endpoints called by the orchestrator.
+# In Docker these resolve to container names (see application-docker.yml);
+# here they target local development instances.
+saga:
+  services:
+    order-service: ${ORDER_SERVICE_URL:http://localhost:8081}
+    payment-service: ${PAYMENT_SERVICE_URL:http://localhost:8082}
+    inventory-service: ${INVENTORY_SERVICE_URL:http://localhost:8083}
+
 pulsar:
   service-url: pulsar://localhost:6650
 

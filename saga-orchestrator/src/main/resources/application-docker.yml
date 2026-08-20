@@ -8,5 +8,11 @@ spring:
     username: sa
     password: ${SAGA_DB_PASSWORD}
 
+saga:
+  services:
+    order-service: http://order-service:8081
+    payment-service: http://payment-service:8082
+    inventory-service: http://inventory-service:8083
+
 pulsar:
   service-url: pulsar://pulsar:6650
