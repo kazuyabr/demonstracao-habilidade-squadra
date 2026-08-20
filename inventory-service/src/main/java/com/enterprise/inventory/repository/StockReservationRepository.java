@@ -13,6 +13,8 @@ public interface StockReservationRepository extends MongoRepository<StockReserva
 
     Optional<StockReservation> findByOrderIdAndProductId(String orderId, String productId);
 
+    List<StockReservation> findAllByOrderIdAndProductId(String orderId, String productId);
+
     List<StockReservation> findByOrderId(String orderId);
 
     List<StockReservation> findByStatus(ReservationStatus status);

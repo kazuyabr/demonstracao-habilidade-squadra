@@ -101,6 +101,13 @@ public class SagaInstance {
     private String failureReason;
 
     /**
+     * Original OrderCreatedEvent payload (JSON) so the saga can read the
+     * product/quantity data it needs to call the real services.
+     */
+    @Column(columnDefinition = "NVARCHAR(MAX)")
+    private String orderPayload;
+
+    /**
      * Timestamp when saga was created
      */
     @CreationTimestamp

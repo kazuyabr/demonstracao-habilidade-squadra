@@ -1,0 +1,10 @@
+# Shell scripts must use LF line endings so they run inside Linux containers.
+*.sh text eol=lf
+
+# Java/XML/YAML/JSON/markdown as text (LF on Linux containers)
+*.java text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
